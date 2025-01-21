@@ -47,7 +47,7 @@ std::string print_shape(const std::vector<std::int64_t>& v)
     return ss.str();
 }
 
-int main(int argc, char** argv)
+int main()
 {
     const std::basic_string<ORTCHAR_T> model_path = "yolov8n.onnx";
     const std::filesystem::path image_path = "images/dog.png";
@@ -136,6 +136,7 @@ int main(int argc, char** argv)
         output_names.emplace_back(s.c_str());
     }
 
+    // Create inference tensor
     Ort::MemoryInfo memory_info = Ort::MemoryInfo::CreateCpu(OrtDeviceAllocator, OrtMemTypeCPU);
 
     std::vector<Ort::Value> input_tensors;
@@ -147,6 +148,7 @@ int main(int argc, char** argv)
             input_shapes.at(0).data(),
             input_shapes.at(0).size()));
 
+    // Run inference
     std::vector<Ort::Value> output_tensors = session.Run(
         Ort::RunOptions{nullptr},
         input_names.data(),

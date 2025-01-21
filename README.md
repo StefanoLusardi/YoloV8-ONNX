@@ -1,5 +1,5 @@
 # YoloV8-ONNX
-Welcome to YoloV8-ONNX
+Welcome to YoloV8-ONNX!
 
 This is a project to show how to perform inference on a YoloV8 ONNX model using C++.
 
@@ -11,7 +11,7 @@ The only dependency is [stb_image.h](https://github.com/nothings/stb/blob/master
 
 ## Getting Started
 
-This project uses git submodules so it is required to clone it using the *--recursive* flag in order to retrive the required submodules.
+This project uses git submodules so it is required to clone it using the *--recurse-submodules* flag in order to retrive the required submodules.
 
 ```bash
 # Clone the repo
@@ -89,14 +89,22 @@ Install the project dependencies as specified in the conanfile.txt.
 python scripts/conan/setup.py <Debug|Release> <COMPILER_NAME> <COMPILER_VERSION>
 
 # examples:
-python scripts/conan/setup.py Debug visual_studio 17
 python scripts/conan/setup.py Release clang 15
+python scripts/conan/setup.py Debug visual_studio 17
+
+# Visual Studio versions:
+# VS 2019: 16
+# VS 2022: 17
 ```
 
 ## Build
 Run the following script to configure, build and install the project.
 ```bash
-python scripts/cmake.py Debug clang 15
+python scripts/cmake.py <Debug|Release> <COMPILER_NAME> <COMPILER_VERSION>
+
+# examples:
+python scripts/cmake.py Release clang 15
+python scripts/cmake.py Debug visual_studio 17
 ```
 
 ## Run
