@@ -4,14 +4,9 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#include <algorithm>
-#include <chrono>
 #include <filesystem>
-#include <fstream>
 #include <iostream>
-#include <numeric>
 #include <string>
-#include <variant>
 #include <vector>
 
 struct image

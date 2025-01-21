@@ -69,7 +69,8 @@
         "cinttypes": "cpp",
         "typeindex": "cpp",
         "span": "cpp",
-        "string_span": "cpp"
+        "string_span": "cpp",
+        "filesystem": "cpp"
     },
     "git.ignoreLimitWarning": true
 }
