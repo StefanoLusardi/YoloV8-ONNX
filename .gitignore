@@ -1,0 +1,6 @@
+**/.venv
+**/.conan
+**/build
+**/__pycache__
+**/yolov8*
+**/compile_commands.json

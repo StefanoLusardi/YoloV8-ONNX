@@ -1,0 +1,45 @@
+{
+    "env": {
+        "includeDirs": [
+            "${workspaceFolder}/**"
+        ]
+    },
+    "configurations": [
+        {
+            "name": "Linux",
+            "compilerPath": "/usr/bin/clang++-15",
+            "intelliSenseMode": "linux-clang-x64",
+            "cppStandard": "c++20",
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "compileCommands": "${workspaceFolder}/compile_commands.json",
+            "includePath": [
+                "${env:includeDirs}"
+            ],
+            "browse": {
+                "path": [
+                    "${env:includeDirs}",
+                    "${workspaceFolder}"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
+        },
+        {
+            "name": "Win32",
+            "intelliSenseMode": "windows-msvc-x64",
+            "cppStandard": "c++20",
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "compileCommands": "${workspaceFolder}/compile_commands.json",
+            "includePath": [
+                "${env:includeDirs}"
+            ],
+            "browse": {
+                "path": [
+                    "${env:includeDirs}",
+                    "${workspaceFolder}"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
+        }
+    ],
+    "version": 4
+}
