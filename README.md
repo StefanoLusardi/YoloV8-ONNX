@@ -2,7 +2,12 @@
 Welcome to YoloV8-ONNX
 
 This is a project to show how to perform inference on a YoloV8 ONNX model using C++.
-In order to simplify dependencies management as well as to improve performance, OenCV is not required. It is only used in order to provide benchmark for image pre-processing algorithms.
+
+In order to simplify dependencies management as well as to improve performance, OpenCV is not required.
+
+The algorithms contained in [pre_processing.hpp](./src/pre_processing.hpp/) and [post_processing.hpp](./src/post_processing.hpp/) are written in plain C++.
+
+The only dependency is [stb_image.h](https://github.com/nothings/stb/blob/master/stb_image.h) which is used to load images from disk.
 
 ## Getting Started
 
@@ -42,7 +47,7 @@ Run this command into the previously created python virtual environment in order
 pip install -r models/requirements.txt
 ```
 
-## Download, Export and validate Yolo model
+## Download, Export and Validate YoloV8 model
 Run these commands to download a pre-trained Yolo model from the Ultralytics repository, export into the ONNX format and validate it performing an inference with random data.
 
 ```bash
