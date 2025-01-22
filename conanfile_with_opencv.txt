@@ -1,4 +1,5 @@
 [requires]
+stb/cci.20240531
 onnxruntime/1.18.1
 opencv/4.10.0
 

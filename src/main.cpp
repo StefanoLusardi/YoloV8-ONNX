@@ -1,11 +1,11 @@
+#define STB_IMAGE_IMPLEMENTATION
 #include "post_processing.hpp"
 #include "pre_processing.hpp"
-#include <onnxruntime/core/session/onnxruntime_cxx_api.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 #include <filesystem>
 #include <iostream>
+#include <onnxruntime/core/session/onnxruntime_cxx_api.h>
+#include <stb_image.h>
 #include <string>
 #include <vector>
 

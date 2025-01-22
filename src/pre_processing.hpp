@@ -49,8 +49,8 @@ void resize_image_aspect_ratio(
 
             for (int c = 0; c < image_channels; ++c)
             {
-                resized_image[((y + pad_y) * target_width + (x + pad_x)) * image_channels + c] =
-                    image[(src_y * image_width + src_x) * image_channels + c];
+                auto idx = ((y + pad_y) * target_width + (x + pad_x)) * image_channels + c;
+                resized_image[idx] = image[(src_y * image_width + src_x) * image_channels + c];
             }
         }
     }

@@ -3,10 +3,11 @@ project(YoloV8-ONNX)
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build/modules)
 
 find_package(onnxruntime REQUIRED)
+find_package(stb REQUIRED)
 
 add_executable(yolov8 src/main.cpp)
 target_compile_features(yolov8 PUBLIC cxx_std_20)
-target_link_libraries(yolov8 PRIVATE onnxruntime::onnxruntime)
+target_link_libraries(yolov8 PRIVATE onnxruntime::onnxruntime stb::stb)
 
 # Copy ONNX model in the executable directory
 add_custom_command(TARGET yolov8 POST_BUILD
