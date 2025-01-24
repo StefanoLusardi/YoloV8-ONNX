@@ -1,21 +1,32 @@
 #pragma once
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <numeric>
 #include <utility>
 #include <vector>
 
-constexpr float NETWORK_WIDTH = 640.0f;
-constexpr float NETWORK_HEIGHT = 640.0f;
+constexpr int NETWORK_WIDTH = 640; // Now integers
+constexpr int NETWORK_HEIGHT = 640;
 constexpr float IOU_THRESHOLD = 0.5f;
+constexpr int BBOX_COORDS_OFFSET = 4;
 
 struct rect
 {
     int x, y, width, height;
-    float area() const
+
+    rect(int x, int y, int width, int height)
+        : x(x)
+        , y(y)
+        , width(width)
+        , height(height)
     {
-        return static_cast<float>(width * height);
+    }
+
+    int area() const
+    {
+        return width * height;
     }
 };
 
@@ -40,7 +51,7 @@ float calculate_iou(const rect& box1, const rect& box2)
         return 0.0f;
 
     float intersection = static_cast<float>(w * h);
-    float union_area = box1.area() + box2.area() - intersection;
+    float union_area = static_cast<float>(box1.area() + box2.area()) - intersection;
 
     return intersection / union_area;
 }
@@ -51,29 +62,29 @@ std::vector<int> non_maximum_suppression(const std::vector<rect>& boxes,
     std::vector<int> indices(boxes.size());
     std::iota(indices.begin(), indices.end(), 0);
 
-    // Sort indices based on scores
     std::sort(indices.begin(), indices.end(), [&scores](int idx1, int idx2) {
         return scores[idx1] > scores[idx2];
     });
 
+    std::vector<bool> keep(boxes.size(), true);
     std::vector<int> final_indices;
-    while (!indices.empty())
-    {
-        int idx = indices.front();
-        final_indices.push_back(idx);
-        indices.erase(indices.begin());
 
-        auto it = indices.begin();
-        while (it != indices.end())
+    for (size_t i = 0; i < indices.size(); ++i)
+    {
+        if (!keep[indices[i]])
+            continue;
+
+        final_indices.push_back(indices[i]);
+
+        for (size_t j = i + 1; j < indices.size(); ++j)
         {
-            float iou = calculate_iou(boxes[idx], boxes[*it]);
+            if (!keep[indices[j]])
+                continue;
+
+            float iou = calculate_iou(boxes[indices[i]], boxes[indices[j]]);
             if (iou > IOU_THRESHOLD)
             {
-                it = indices.erase(it);
-            }
-            else
-            {
-                ++it;
+                keep[indices[j]] = false;
             }
         }
     }
@@ -83,40 +94,39 @@ std::vector<int> non_maximum_suppression(const std::vector<rect>& boxes,
 
 rect get_rect(int frame_width, int frame_height, const std::vector<float>& bbox)
 {
-    float r_w = NETWORK_WIDTH / static_cast<float>(frame_width);
-    float r_h = NETWORK_HEIGHT / static_cast<float>(frame_height);
+    float r_w = static_cast<float>(NETWORK_WIDTH) / frame_width;
+    float r_h = static_cast<float>(NETWORK_HEIGHT) / frame_height;
 
-    int l, r, t, b;
+    float fleft, fright, ftop, fbottom;
     if (r_h > r_w)
     {
-        l = bbox[0] - bbox[2] / 2.f;
-        r = bbox[0] + bbox[2] / 2.f;
-        t = bbox[1] - bbox[3] / 2.f - (NETWORK_HEIGHT - r_w * frame_height) / 2;
-        b = bbox[1] + bbox[3] / 2.f - (NETWORK_HEIGHT - r_w * frame_height) / 2;
-        l /= r_w;
-        r /= r_w;
-        t /= r_w;
-        b /= r_w;
+        fleft = bbox[0] - bbox[2] / 2.0f;
+        fright = bbox[0] + bbox[2] / 2.0f;
+        ftop = bbox[1] - bbox[3] / 2.0f - (NETWORK_HEIGHT - r_w * frame_height) / 2.0f;
+        fbottom = bbox[1] + bbox[3] / 2.0f - (NETWORK_HEIGHT - r_w * frame_height) / 2.0f;
+        fleft /= r_w;
+        fright /= r_w;
+        ftop /= r_w;
+        fbottom /= r_w;
     }
     else
     {
-        l = bbox[0] - bbox[2] / 2.f - (NETWORK_WIDTH - r_h * frame_width) / 2;
-        r = bbox[0] + bbox[2] / 2.f - (NETWORK_WIDTH - r_h * frame_width) / 2;
-        t = bbox[1] - bbox[3] / 2.f;
-        b = bbox[1] + bbox[3] / 2.f;
-        l /= r_h;
-        r /= r_h;
-        t /= r_h;
-        b /= r_h;
+        fleft = bbox[0] - bbox[2] / 2.0f - (NETWORK_WIDTH - r_h * frame_width) / 2.0f;
+        fright = bbox[0] + bbox[2] / 2.0f - (NETWORK_WIDTH - r_h * frame_width) / 2.0f;
+        ftop = bbox[1] - bbox[3] / 2.0f;
+        fbottom = bbox[1] + bbox[3] / 2.0f;
+        fleft /= r_h;
+        fright /= r_h;
+        ftop /= r_h;
+        fbottom /= r_h;
     }
 
-    // Clamp the coordinates within the image bounds
-    l = std::max(0, std::min(l, frame_width - 1));
-    r = std::max(0, std::min(r, frame_width - 1));
-    t = std::max(0, std::min(t, frame_height - 1));
-    b = std::max(0, std::min(b, frame_height - 1));
+    int left = static_cast<int>(std::round(std::max(0.0f, std::min(fleft, static_cast<float>(frame_width - 1)))));
+    int right = static_cast<int>(std::round(std::max(0.0f, std::min(fright, static_cast<float>(frame_width - 1)))));
+    int top = static_cast<int>(std::round(std::max(0.0f, std::min(ftop, static_cast<float>(frame_height - 1)))));
+    int bottom = static_cast<int>(std::round(std::max(0.0f, std::min(fbottom, static_cast<float>(frame_height - 1)))));
 
-    return {l, t, r - l, b - t};
+    return rect(left, top, right - left, bottom - top);
 }
 
 output postprocess(const float* output_data, const std::vector<int64_t>& shape, int frame_width, int frame_height, float confidence_threshold)
@@ -125,11 +135,10 @@ output postprocess(const float* output_data, const std::vector<int64_t>& shape, 
     std::vector<float> confs;
     std::vector<int> class_ids;
 
-    const auto offset = 4;
-    const auto num_classes = shape[1] - offset;
+    const auto num_classes = shape[1] - BBOX_COORDS_OFFSET;
+
     std::vector<std::vector<float>> output_matrix(shape[1], std::vector<float>(shape[2]));
 
-    // Construct output matrix
     for (size_t i = 0; i < shape[1]; ++i)
     {
         for (size_t j = 0; j < shape[2]; ++j)
@@ -140,7 +149,6 @@ output postprocess(const float* output_data, const std::vector<int64_t>& shape, 
 
     std::vector<std::vector<float>> transposed_output(shape[2], std::vector<float>(shape[1]));
 
-    // Transpose output matrix
     for (int i = 0; i < shape[1]; ++i)
     {
         for (int j = 0; j < shape[2]; ++j)
@@ -149,17 +157,16 @@ output postprocess(const float* output_data, const std::vector<int64_t>& shape, 
         }
     }
 
-    // Get all the YOLO proposals
     for (int i = 0; i < shape[2]; ++i)
     {
         const auto& row = transposed_output[i];
         const float* bboxes_ptr = row.data();
-        const float* scores_ptr = bboxes_ptr + 4;
+        const float* scores_ptr = bboxes_ptr + BBOX_COORDS_OFFSET;
         auto max_score_ptr = std::max_element(scores_ptr, scores_ptr + num_classes);
         float score = *max_score_ptr;
         if (score > confidence_threshold)
         {
-            boxes.emplace_back(get_rect(frame_width, frame_height, std::vector<float>(bboxes_ptr, bboxes_ptr + 4)));
+            boxes.emplace_back(get_rect(frame_width, frame_height, std::vector<float>(bboxes_ptr, bboxes_ptr + BBOX_COORDS_OFFSET)));
             int label = max_score_ptr - scores_ptr;
             confs.emplace_back(score);
             class_ids.emplace_back(label);
