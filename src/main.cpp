@@ -1,11 +1,14 @@
 #define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "post_processing.hpp"
 #include "pre_processing.hpp"
 
+#include <cmath>
 #include <filesystem>
 #include <iostream>
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
 #include <stb_image.h>
+#include <stb_image_write.h>
 #include <string>
 #include <vector>
 
@@ -16,6 +19,101 @@ struct image
     int height;
     int channels;
 };
+
+void draw_bbox(std::vector<uint8_t>& image_data, int width, int height, int channels,
+               const rect& box, int class_id)
+{
+    int x1 = std::max(0, box.x);
+    int y1 = std::max(0, box.y);
+    int x2 = std::min(width - 1, box.x + box.width);
+    int y2 = std::min(height - 1, box.y + box.height);
+
+    // Choose color based on class_id (example)
+    uint8_t r = 0, g = 0, b = 0;
+    switch (class_id % 3)
+    {
+    case 0:
+        r = 255;
+        break;
+    case 1:
+        g = 255;
+        break;
+    case 2:
+        b = 255;
+        break;
+    }
+
+    // Draw rectangle borders (simple implementation)
+    int thickness = 2;
+    for (int t = 0; t < thickness; ++t)
+    {
+        // Top horizontal line
+        for (int x = x1; x <= x2; ++x)
+        {
+            int y = y1 + t;
+            if (y >= 0 && y < height)
+            {
+                image_data[(y * width + x) * channels + 0] = r;
+                image_data[(y * width + x) * channels + 1] = g;
+                image_data[(y * width + x) * channels + 2] = b;
+            }
+        }
+        // Bottom horizontal line
+        for (int x = x1; x <= x2; ++x)
+        {
+            int y = y2 - t;
+            if (y >= 0 && y < height)
+            {
+                image_data[(y * width + x) * channels + 0] = r;
+                image_data[(y * width + x) * channels + 1] = g;
+                image_data[(y * width + x) * channels + 2] = b;
+            }
+        }
+        // Left vertical line
+        for (int y = y1; y <= y2; ++y)
+        {
+            int x = x1 + t;
+            if (x >= 0 && x < width)
+            {
+                image_data[(y * width + x) * channels + 0] = r;
+                image_data[(y * width + x) * channels + 1] = g;
+                image_data[(y * width + x) * channels + 2] = b;
+            }
+        }
+        // Right vertical line
+        for (int y = y1; y <= y2; ++y)
+        {
+            int x = x2 - t;
+            if (x >= 0 && x < width)
+            {
+                image_data[(y * width + x) * channels + 0] = r;
+                image_data[(y * width + x) * channels + 1] = g;
+                image_data[(y * width + x) * channels + 2] = b;
+            }
+        }
+    }
+}
+
+// Save the image with drawn bounding boxes
+void save_image_with_bboxes(const image& img, const output& result,
+                            const std::filesystem::path& output_path)
+{
+    std::vector<uint8_t> image_data_copy = img.data;
+
+    for (size_t i = 0; i < result.boxes.size(); ++i)
+    {
+        draw_bbox(image_data_copy, img.width, img.height, img.channels, result.boxes[i], result.class_ids[i]);
+    }
+
+    if (stbi_write_jpg(output_path.string().c_str(), img.width, img.height, img.channels, image_data_copy.data(), 95))
+    {
+        std::cout << "Image with bounding boxes saved to: " << output_path << std::endl;
+    }
+    else
+    {
+        std::cerr << "Failed to save image: " << output_path << std::endl;
+    }
+}
 
 image load_image(const std::filesystem::path& image_path)
 {
@@ -81,11 +179,23 @@ int main()
         auto input_type = session.GetInputTypeInfo(i).GetTensorTypeAndShapeInfo().GetElementType();
         auto input_count = session.GetInputTypeInfo(i).GetTensorTypeAndShapeInfo().GetElementCount();
 
-        for (auto& s : input_shape)
+        // Adjust only dimensions equal to -1 (dynamic axis case)
+        for (size_t idx = 0; idx < input_shape.size(); ++idx)
         {
-            if (s < 0)
-                s = 1;
+            if (input_shape[idx] == -1)
+            {
+                // Replace with actual size
+                if (idx == 0)
+                    input_shape[idx] = 1; // Batch size
+                else if (idx == 1)
+                    input_shape[idx] = img.channels; // Number of channels (usually 3)
+                else if (idx == 2)
+                    input_shape[idx] = target_height; // Image height (e.g., 640)
+                else if (idx == 3)
+                    input_shape[idx] = target_width; // Image width (e.g., 640)
+            }
         }
+
         input_shapes.emplace_back(input_shape);
         input_names_str.emplace_back(input_name.get());
 
@@ -173,6 +283,8 @@ int main()
             << ", Confidence: " << output_postprocess.confs[i]
             << std::endl;
     }
+
+    save_image_with_bboxes(img, output_postprocess, "output.jpg");
 
     return EXIT_SUCCESS;
 }

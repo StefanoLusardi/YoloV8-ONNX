@@ -132,6 +132,4 @@ Output: 0
 
 Detection results:
 Class: 16, Confidence: 0.836329
-Class: 16, Confidence: 0.83732
-Class: 16, Confidence: 0.860839
 ```
